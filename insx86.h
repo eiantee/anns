@@ -6,18 +6,20 @@
 #define INSX86_H
 #include <immintrin.h>
 
-template<int D>
-inline void addf(double *a, float *b) {
-    for (int i = 0; i < D; i++) {
-        a[i] += b[i];
-    }
+static inline void prefetch1h(const void *data) {
+    _mm_prefetch(data, _MM_HINT_T0);
 }
 
-template<int D>
-inline void scaled(double * a, double b) {
-    for (int i = 0; i < D; i++) {
-        a[i] *= b;
-    }
+static inline void prefetch3h(const void *data) {
+    _mm_prefetch(data, _MM_HINT_T2);
+}
+
+static inline void prefetch1l(const void *data) {
+    _mm_prefetch(data, _MM_HINT_T0);
+}
+
+static inline void prefetch3l(const void *data) {
+    _mm_prefetch(data, _MM_HINT_T2);
 }
 
 template<int D>
@@ -33,6 +35,83 @@ inline float l2f(const float* a, const float* b) {
 template<int D>
 float vector_dis(const float* a, const float* b) {
     return l2f<D>(a, b);
+}
+
+template<int S>
+inline void sub(float* a, float* b, float* result) {
+    sub<4>(a, b, result);
+    sub<S - 4>(a + 4, b + 4, result + 4);
+}
+
+inline void sub<4>(float* a, float* b, float* result) {
+    __m128 va = _mm_loadu_ps(a);
+    __m128 vb = _mm_loadu_ps(b);
+    va = _mm_sub_ps(va, vb);
+    _mm_storeu_ps(result, va);
+}
+
+inline void sub<3>(float* a, float* b, float* result) {
+    for (int i = 0; i < 3; i++) {
+        result[i] = a[i] - b[i];
+    }
+}
+
+inline void sub<2>(float* a, float* b, float* result) {
+    for (int i = 0; i < 2; i++) {
+        result[i] = a[i] - b[i];
+    }
+}
+
+inline void sub<1>(float* a, float* b, float* result) {
+    result[0] = a[0] - b[0];
+}
+
+template<int S>
+inline __m128 l2f(float* a, float* b) {
+    __m128 va = l2f<4>(a, b);
+    __m128 vb = l2f<S - 4>(a + 4, b + 4);
+    return _mm_add_ps(va, vb);
+}
+
+inline __m128 l2f<4>(float* a, float* b) {
+    __m128 va = _mm_loadu_ps(a);
+    __m128 vb = _mm_loadu_ps(b);
+    va = _mm_sub_ps(va, vb);
+    return _mm_mul_ps(va, va);
+}
+
+inline __m128 l2f<3>(float* a, float* b) {
+    __m128 va = _mm_set_ps(a[0], a[1], a[2], 0.0f);
+    __m128 vb = _mm_set_ps(b[0], b[1], b[2], 0.0f);
+    va = _mm_sub_ps(va, vb);
+    return _mm_mul_ps(va, va);
+}
+
+inline __m128 l2f<2>(float* a, float* b) {
+    __m128 va = _mm_set_ps(a[0], a[1], 0.0f, 0.0f);
+    __m128 vb = _mm_set_ps(b[0], b[1], 0.0f, 0.0f);
+    va = _mm_sub_ps(va, vb);
+    return _mm_mul_ps(va, va);
+}
+
+inline __m128 l2f<1>(float* a, float* b) {
+    __m128 va = _mm_set_ps(a[0], 0.0f, 0.0f, 0.0f);
+    __m128 vb = _mm_set_ps(b[0], 0.0f, 0.0f, 0.0f);
+    va = _mm_sub_ps(va, vb);
+    return _mm_mul_ps(va, va);
+}
+
+template<int D>
+float vector_dis(const float* a, const float* b) {
+    __m128 vec = l2f<D>(a, b);
+    // 第一步：将高 64 位和低 64 位的元素相加
+    __m128 sum1 = _mm_add_ps(vec, _mm_movehl_ps(vec, vec));
+
+    // 第二步：将 128 位向量的低 32 位和高 32 位的元素相加
+    __m128 sum2 = _mm_add_ss(sum1, _mm_shuffle_ps(sum1, sum1, 1));
+
+    // 将结果转换为 float
+    return _mm_cvtss_f32(sum2);
 }
 
 #endif //INSX86_H

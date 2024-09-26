@@ -66,8 +66,8 @@ inline void sub<1>(float* a, float* b, float* result) {
 
 template<int S>
 inline float32x4_t l2f(float* a, float* b) {
-    float32x4_t va = l2f<4>(a, b, result);
-    float32x4_t vb = l2f<S - 4>(a + 4, b + 4, result + 4);
+    float32x4_t va = l2f<4>(a, b);
+    float32x4_t vb = l2f<S - 4>(a + 4, b + 4);
     return vaddq_f32(va, vb);
 }
 
