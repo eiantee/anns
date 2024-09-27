@@ -451,17 +451,18 @@ void crossBuild(Layer<D, K>* layer_t, ClusterIndex* clusterIndex, LayIndex* layI
     std::vector<node> nodes;
     std::vector<std::vector<float>> dis_matric_;
     std::vector<int> cluster_ids;
+    std::unordered_set<int> cluster_ids_set;
     std::priority_queue<std::pair<float, int>> cross;
 
     if (layer_t->is_base) {
         for (int i = 0; i < layer_cross->d_size; i++) {
-            cluster_ids.clear();
+            cluster_ids_set.clear();
             for (int j = 0; j < clusterIndex->getSize(); j++) {
                 // i 是 cross_local_id
                 int cross_global_id = clusterIndex->at(j, layer_cross->layer_id);
                 int this_global_id = j;
                 if (layIndex->getLocalId(layer_cross->layer_id, cross_global_id) == i) {
-                    cluster_ids.push_back(this_global_id);
+                    cluster_ids_set.insert(this_global_id);
                 }
             }
             // select cross
@@ -480,32 +481,34 @@ void crossBuild(Layer<D, K>* layer_t, ClusterIndex* clusterIndex, LayIndex* layI
                     }
                 }
                 while (!cross.empty()) {
-                    cluster_ids.push_back(cross.top().second);
+                    cluster_ids_set.insert(cross.top().second);
                     cross.pop();
                 }
             }
 
+            cluster_ids.assign(cluster_ids_set.begin(), cluster_ids_set.end());
+            int k_s = std::min<int>(cluster_ids.size() - 1, MAX_M);
             nodes.clear();
-            nodes.resize(cluster_ids.size(), MAX_M);
+            nodes.resize(cluster_ids.size(), k_s);
             dis_matric_.resize(cluster_ids.size());
             for (auto& ddd : dis_matric_) {
                 ddd.resize(cluster_ids.size());
             }
 
-            Kbrute<D, K> kb(real_base, cluster_ids.size(), MAX_M, &nodes, &cluster_ids, &dis_matric_);
+            Kbrute<D, K> kb(real_base, cluster_ids.size(), k_s, &nodes, &cluster_ids, &dis_matric_);
             kb.compute();
             kb.doMrng();
             kb.addBaseNeighbor(layer_t);
         }
     } else {
         for (int i = 0; i < layer_cross->d_size; i++) {
-            cluster_ids.clear();
+            cluster_ids_set.clear();
             for (int j = 0; j < clusterIndex->getSize(); j++) {
                 // i 是 cross_local_id
                 int cross_global_id = clusterIndex->at(j, layer_cross->layer_id);
                 int this_global_id = clusterIndex->at(j, layer_t->layer_id);
                 if (layIndex->getLocalId(layer_cross->layer_id, cross_global_id) == i) {
-                    cluster_ids.push_back(this_global_id);
+                    cluster_ids_set.insert(this_global_id);
                 }
             }
             // select cross
@@ -525,19 +528,21 @@ void crossBuild(Layer<D, K>* layer_t, ClusterIndex* clusterIndex, LayIndex* layI
                     }
                 }
                 while (!cross.empty()) {
-                    cluster_ids.push_back(cross.top().second);
+                    cluster_ids_set.insert(cross.top().second);
                     cross.pop();
                 }
             }
 
+            cluster_ids.assign(cluster_ids_set.begin(), cluster_ids_set.end());
+            int k_s = std::min<int>(cluster_ids.size() - 1, MAX_M);
             nodes.clear();
-            nodes.resize(cluster_ids.size(), MAX_M);
+            nodes.resize(cluster_ids.size(), k_s);
             dis_matric_.resize(cluster_ids.size());
             for (auto& ddd : dis_matric_) {
                 ddd.resize(cluster_ids.size());
             }
 
-            Kbrute<D, K> kb(vb->at(0), cluster_ids.size(), MAX_M, &nodes, &cluster_ids, &dis_matric_);
+            Kbrute<D, K> kb(vb->at(0), cluster_ids.size(), k_s, &nodes, &cluster_ids, &dis_matric_);
             kb.compute();
             kb.doMrng();
             kb.addBaseNeighbor(layer_t);

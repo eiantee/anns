@@ -13,32 +13,36 @@
 #ifdef CONTEST
 #include "insarm.h"
 #define CACHE_LINE 128
+#define THREADS 16
+#define TEST_DIM 512
 #else
 #include "insx86.h"
 #define CACHE_LINE 64
+#define THREADS 16
+#define TEST_DIM 960
 #endif
 #include <pthread.h>
 
 
-inline prefetchGlobalH(const void *data, int size) {
+inline void prefetchGlobalH(const void *data, int size) {
     for (int i = 0; i < size / CACHE_LINE + 1; i++) {
         prefetch3h(data + i * CACHE_LINE);
     }
 }
 
-inline prefetchGlobalL(const void *data, int size) {
+inline void prefetchGlobalL(const void *data, int size) {
     for (int i = 0; i < size / CACHE_LINE + 1; i++) {
         prefetch3l(data + i * CACHE_LINE);
     }
 }
 
-inline prefetchLocalH(const void *data, int size) {
+inline void prefetchLocalH(const void *data, int size) {
     for (int i = 0; i < size / CACHE_LINE + 1; i++) {
         prefetch1h(data + i * CACHE_LINE);
     }
 }
 
-inline prefetchLocalL(const void *data, int size) {
+inline void prefetchLocalL(const void *data, int size) {
     for (int i = 0; i < size / CACHE_LINE + 1; i++) {
         prefetch1l(data + i * CACHE_LINE);
     }

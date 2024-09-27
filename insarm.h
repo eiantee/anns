@@ -5,6 +5,8 @@
 #ifndef INSARM_H
 #define INSARM_H
 #include <arm_neon.h>
+#include <cassert>
+#include <cmath>
 
 static inline void prefetch1h(const void *data) {
     __asm__ __volatile__(
@@ -104,6 +106,41 @@ float vector_dis(const float* a, const float* b) {
     float32x4_t x = l2f<D>(a, b);
     float32x2_t r = vadd_f32(vget_high_f32(x), vget_low_f32(x));
     return vget_lane_f32(r, 0) + vget_lane_f32(r, 1);
+}
+
+template<typename T>
+void assert_equal_all(T * a, T * b, int size) {
+    for (int i = 0; i < size; i++) {
+        assert(abs(a[i] - b[i]) < 0.000001f);
+    }
+}
+
+template<typename T>
+void assert_equal(T a, T b) {
+    assert(abs(a - b) < 0.000001f);
+}
+
+void assert_arch() {
+    float a[1027];
+    float b[1027];
+    for (int i = 0; i < 1027; i++) {
+        a[i] = i % 11;
+        b[i] = i % 17;
+    }
+
+    float l2 = 0.0f;
+    for (int i = 0; i < 1027; i++) {
+        l2 += (a[i] - b[i]) * (a[i] - b[i]);
+    }
+    assert_equal(l2, vector_dis<1027>(a, b));
+
+    float c[1027];
+    sub<1027>(a, b, c);
+    float d[1027];
+    for (int i = 0; i < 1027; i++) {
+        d[i] = a[i] - b[i];
+    }
+    assert_equal_all(c, d, 1027);
 }
 
 #endif //INSARM_H
