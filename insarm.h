@@ -34,19 +34,21 @@ static inline void prefetch3l(const void *data) {
 
 //https://developer.arm.com/documentation/den0018/a/NEON-Intrinsics-Reference/Arithmetic/VSUB?lang=en
 template<int S>
-inline void sub(float* a, float* b, float* result) {
+inline void sub(const float* a, const float* b, float* result) {
     sub<4>(a, b, result);
     sub<S - 4>(a + 4, b + 4, result + 4);
 }
 
-inline void sub<4>(float* a, float* b, float* result) {
+template<>
+inline void sub<4>(const float* a, const float* b, float* result) {
     float32x4_t va = vld1q_f32(a);
     float32x4_t vb = vld1q_f32(b);
     va = vsubq_f32(va, vb);
     vst1q_f32(result, va);
 }
 
-inline void sub<3>(float* a, float* b, float* result) {
+template<>
+inline void sub<3>(const float* a, const float* b, float* result) {
     float32x4_t va = {a[0], a[1], a[2], 0.0f};
     float32x4_t vb = {b[0], b[1], b[2], 0.0f};
     va = vsubq_f32(va, vb);
@@ -55,46 +57,52 @@ inline void sub<3>(float* a, float* b, float* result) {
     vst1q_lane_f32(result + 2, va, 2);
 }
 
-inline void sub<2>(float* a, float* b, float* result) {
+template<>
+inline void sub<2>(const float* a, const float* b, float* result) {
     float32x2_t va = vld1_f32(a);
     float32x2_t vb = vld1_f32(b);
     va = vsub_f32(va, vb);
     vst1_f32(result, va);
 }
 
-inline void sub<1>(float* a, float* b, float* result) {
+template<>
+inline void sub<1>(const float* a, const float* b, float* result) {
     result[0] = a[0] - b[0];
 }
 
 template<int S>
-inline float32x4_t l2f(float* a, float* b) {
+inline float32x4_t l2f(const float* a, const float* b) {
     float32x4_t va = l2f<4>(a, b);
     float32x4_t vb = l2f<S - 4>(a + 4, b + 4);
     return vaddq_f32(va, vb);
 }
 
-inline float32x4_t l2f<4>(float* a, float* b) {
+template<>
+inline float32x4_t l2f<4>(const float* a, const float* b) {
     float32x4_t va = vld1q_f32(a);
     float32x4_t vb = vld1q_f32(b);
     va = vsubq_f32(va, vb);
     return vmulq_f32(va, va);
 }
 
-inline float32x4_t l2f<3>(float* a, float* b) {
+template<>
+inline float32x4_t l2f<3>(const float* a, const float* b) {
     float32x4_t va = {a[0], a[1], a[2], 0.0f};
     float32x4_t vb = {b[0], b[1], b[2], 0.0f};
     va = vsubq_f32(va, vb);
     return vmulq_f32(va, va);
 }
 
-inline float32x4_t l2f<2>(float* a, float* b) {
+template<>
+inline float32x4_t l2f<2>(const float* a, const float* b) {
     float32x4_t va = {a[0], a[1], 0.0f, 0.0f};
     float32x4_t vb = {b[0], b[1], 0.0f, 0.0f};
     va = vsubq_f32(va, vb);
     return vmulq_f32(va, va);
 }
 
-inline float32x4_t l2f<1>(float* a, float* b) {
+template<>
+inline float32x4_t l2f<1>(const float* a, const float* b) {
     float32x4_t va = {a[0], 0.0f, 0.0f, 0.0f};
     float32x4_t vb = {b[0], 0.0f, 0.0f, 0.0f};
     va = vsubq_f32(va, vb);

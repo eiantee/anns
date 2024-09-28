@@ -10,6 +10,8 @@
 #define CONTEST 1
 #endif
 
+// #define CONTEST 1
+
 #ifdef CONTEST
 #include "insarm.h"
 #define CACHE_LINE 128
@@ -23,28 +25,30 @@
 #endif
 #include <pthread.h>
 
+static int thread_local my_thread_id = 0;
+
 
 inline void prefetchGlobalH(const void *data, int size) {
     for (int i = 0; i < size / CACHE_LINE + 1; i++) {
-        prefetch3h(data + i * CACHE_LINE);
+        prefetch3h((char*)data + i * CACHE_LINE);
     }
 }
 
 inline void prefetchGlobalL(const void *data, int size) {
     for (int i = 0; i < size / CACHE_LINE + 1; i++) {
-        prefetch3l(data + i * CACHE_LINE);
+        prefetch3l((char*)data + i * CACHE_LINE);
     }
 }
 
 inline void prefetchLocalH(const void *data, int size) {
     for (int i = 0; i < size / CACHE_LINE + 1; i++) {
-        prefetch1h(data + i * CACHE_LINE);
+        prefetch1h((char*)data + i * CACHE_LINE);
     }
 }
 
 inline void prefetchLocalL(const void *data, int size) {
     for (int i = 0; i < size / CACHE_LINE + 1; i++) {
-        prefetch1l(data + i * CACHE_LINE);
+        prefetch1l((char*)data + i * CACHE_LINE);
     }
 }
 

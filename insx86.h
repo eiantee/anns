@@ -22,79 +22,72 @@ static inline void prefetch3l(const void *data) {
     _mm_prefetch(data, _MM_HINT_T2);
 }
 
-template<int D>
-inline float l2f(const float* a, const float* b) {
-    float ret = 0.0f;
-    for (int i = 0; i < D; i++) {
-        float t = a[i] - b[i];
-        ret += t * t;
-    }
-    return ret;
-}
-
-template<int D>
-float vector_dis(const float* a, const float* b) {
-    return l2f<D>(a, b);
-}
-
 template<int S>
-inline void sub(float* a, float* b, float* result) {
+inline void sub(const float* a, const float* b, float* result) {
     sub<4>(a, b, result);
     sub<S - 4>(a + 4, b + 4, result + 4);
 }
 
-inline void sub<4>(float* a, float* b, float* result) {
+template<>
+inline void sub<4>(const float* a, const float* b, float* result) {
     __m128 va = _mm_loadu_ps(a);
     __m128 vb = _mm_loadu_ps(b);
     va = _mm_sub_ps(va, vb);
     _mm_storeu_ps(result, va);
 }
 
-inline void sub<3>(float* a, float* b, float* result) {
+template<>
+inline void sub<3>(const float* a, const float* b, float* result) {
     for (int i = 0; i < 3; i++) {
         result[i] = a[i] - b[i];
     }
 }
 
-inline void sub<2>(float* a, float* b, float* result) {
+template<>
+inline void sub<2>(const float* a, const float* b, float* result) {
     for (int i = 0; i < 2; i++) {
         result[i] = a[i] - b[i];
     }
 }
 
-inline void sub<1>(float* a, float* b, float* result) {
+template<>
+inline void sub<1>(const float* a, const float* b, float* result) {
     result[0] = a[0] - b[0];
 }
 
 template<int S>
-inline __m128 l2f(float* a, float* b) {
+inline __m128 l2f(const float* a, const float* b) {
     __m128 va = l2f<4>(a, b);
     __m128 vb = l2f<S - 4>(a + 4, b + 4);
     return _mm_add_ps(va, vb);
 }
 
-inline __m128 l2f<4>(float* a, float* b) {
+template<>
+inline __m128 l2f<4>(const float* a, const float* b) {
     __m128 va = _mm_loadu_ps(a);
     __m128 vb = _mm_loadu_ps(b);
     va = _mm_sub_ps(va, vb);
     return _mm_mul_ps(va, va);
 }
 
-inline __m128 l2f<3>(float* a, float* b) {
+template<>
+inline __m128 l2f<3>(const float* a, const float* b) {
     __m128 va = _mm_set_ps(a[0], a[1], a[2], 0.0f);
     __m128 vb = _mm_set_ps(b[0], b[1], b[2], 0.0f);
     va = _mm_sub_ps(va, vb);
     return _mm_mul_ps(va, va);
 }
 
-inline __m128 l2f<2>(float* a, float* b) {
+template<>
+inline __m128 l2f<2>(const float* a, const float* b) {
     __m128 va = _mm_set_ps(a[0], a[1], 0.0f, 0.0f);
     __m128 vb = _mm_set_ps(b[0], b[1], 0.0f, 0.0f);
     va = _mm_sub_ps(va, vb);
     return _mm_mul_ps(va, va);
 }
 
-inline __m128 l2f<1>(float* a, float* b) {
+template<>
+inline __m128 l2f<1>(const float* a, const float* b) {
     __m128 va = _mm_set_ps(a[0], 0.0f, 0.0f, 0.0f);
     __m128 vb = _mm_set_ps(b[0], 0.0f, 0.0f, 0.0f);
     va = _mm_sub_ps(va, vb);
